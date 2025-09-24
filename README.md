@@ -1,19 +1,32 @@
-Horizon - App de Roteiros de Viagem com IA
-Sobre o Projeto
-O Horizon é um aplicativo móvel de planejamento de viagens desenvolvido para um projeto de lab de engenharia. O objetivo principal é simplificar a organização de roteiros de viagem utilizando o poder da inteligência artificial.
+# 🌍 Horizon - App de Roteiros de Viagem com IA
 
-Funcionalidades Principais
-Geração de Roteiros com IA: Utiliza a API da OpenAI para criar roteiros detalhados e personalizados para o usuário.
+## 📖 Sobre o Projeto
+O **Horizon** é um aplicativo móvel de **planejamento de viagens** desenvolvido como parte de um projeto acadêmico no curso de **Ciência da Computação**.  
+Seu objetivo principal é **simplificar a organização de roteiros de viagem** utilizando o poder da **Inteligência Artificial**.
 
-Gerenciamento de Viagens: Permite que os usuários salvem, visualizem e gerenciem seus roteiros diretamente no aplicativo.
+---
 
-Upload de Fotos: Funcionalidade para que os usuários possam fazer upload de fotos relacionadas às suas viagens.
+## ✨ Funcionalidades Principais
+- 🤖 **Geração de Roteiros com IA**  
+  Criação de roteiros detalhados e personalizados utilizando a **API da OpenAI**.
 
-Sistema de Feedback: Permite que os usuários avaliem e deem feedback sobre os roteiros gerados pela IA.
+- 🗂 **Gerenciamento de Viagens**  
+  Salve, visualize e gerencie seus roteiros diretamente no aplicativo.
 
-Tecnologias Utilizadas
-Frontend: React Native
+- 📷 **Upload de Fotos**  
+  Faça upload de imagens relacionadas às suas viagens.
 
-Backend: Node.js
+- ⭐ **Sistema de Feedback**  
+  Avalie e dê feedback sobre os roteiros gerados pela IA.
 
-IA: OpenAI API
+---
+
+## 🛠 Tecnologias Utilizadas
+- **Frontend:** React Native  
+- **Backend:** Node.js  
+- **IA:** OpenAI API  
+
+---
+
+## 👨‍💻 Autor
+Desenvolvido por **Grégory Fortunato**, estudante de **Ciência da Computação**.  
