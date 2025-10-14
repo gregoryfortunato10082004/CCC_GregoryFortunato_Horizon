@@ -64,6 +64,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     days: {
-        backgroundColor: '#f1f1f1',
+        backgroundColor: '#f1f1f2',
     }
 });
