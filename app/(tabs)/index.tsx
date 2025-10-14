@@ -1,98 +1,108 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
+import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const StatusBarHeight = StatusBar.currentHeight
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+export default function App(){
+    return(
+        <View style={styles.container}>
+            <StatusBar barStyle="dark-content" translucent={true} backgroundColor="#F1F1F10"/>
+            <Text style={styles.heading}>Horizon</Text>
+            <View style={styles.form}>
+                <Text style={styles.label}>CidadeDestino</Text>
+                <TextInput
+                    placeholder="Ex: Passo Fundo, RS"
+                    style={styles.input}
+                />
+                <Text style={styles.label}>Tempo de estadia: <Text style={styles.days}> 10 </Text> dias</Text>
+                <Slider
+                    style={{ width: 200, height: 40}}
+                    minimumValue={1}
+                    maximumValue={7}
+                    minimumTrackTintColor="#009688"
+                    maximumTrackTintColor="#0000000"
+                />
+            </View>
+            <Pressable style={styles.button}>
+                <Text style={styles.buttonText}>Gerar Roteiro</Text>
+                <MaterialIcons Name="travel-explore" size={24} color="#FFF"></MaterialIcons>
+            </Pressable>
+            <ScrollView contentContainerStyle={{ paddingBottom: 24, marginTop: 4,}} style={styles.containerScroll} showsHorizontalScrollIndicator={false}>
+                <View style={styles.content}>
+                    <Text style={styles.tittle}> Seu Roteiro:  </Text>
+                    <Text> Roteiro completo</Text>
+                </View>
+            </ScrollView>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+    container: {
+        flex: 1,
+        backgroundColor: '#f1f1f1',
+        alignItems: 'center',
+        paddingTop: 20,
+    },
+    heading: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        paddingTop: Platform.OS === 'android' ? StatusBarHeight : 54
+    },
+    form: {
+        backgroundColor: '#fff',
+        width: '90%',
+        borderRadius: 8,
+        padding: 16,
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    label: {
+        fontWeight: 'bold',
+        fontSize: 18,
+        marginBottom: 8,
+    },
+    input: {
+        borderWidth: 1,
+        borderRadius: 4,
+        borderColor: '#94a3b8',
+        padding: 8,
+        fontSize: 16,
+        marginBottom: 16,
+    },
+    days: {
+        backgroundColor: '#f1f1f1',
+    },
+    button: {
+        backgroundColor: '#FF5656',
+        width: '90%',
+        borderRadius: 8,
+        flexDirection: 'row',
+        padding: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 8,
+    },
+    buttonText: {
+        fontSize: 18,
+        color: '#FFF',
+        fontWeight: 'bold',
+    },
+    content: {
+        backgroundColor: '#FFF',
+        padding: 16,
+        width: '100%',
+        borderRadius: 8,
+    },
+    tittle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 14,
+    },
+    containerScroll: {
+        width: '90%',
+        marginTop: 8,
+    }
 });
