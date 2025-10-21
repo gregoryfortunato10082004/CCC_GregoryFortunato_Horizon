@@ -1,10 +1,22 @@
+import { useState } from 'react'
 import { MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
-import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View, ActivityIndicator } from "react-native";
 
 const StatusBarHeight = StatusBar.currentHeight
 
 export default function App(){
+    
+    const [city, setCity] = useState("");
+    const [days, setDays] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [travel, setTravel] = useState("")
+
+    function handleGenerate() {
+        console.log(city)
+        console.log(days.toFixed(0));
+    }
+
     return(
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" translucent={true} backgroundColor="#F1F1F10"/>
@@ -14,25 +26,39 @@ export default function App(){
                 <TextInput
                     placeholder="Ex: Passo Fundo, RS"
                     style={styles.input}
+                    value={city}
+                    onChangeText={ (text) => setCity(text)}
                 />
-                <Text style={styles.label}>Tempo de estadia: <Text style={styles.days}> 10 </Text> dias</Text>
+                <Text style={styles.label}>Tempo de estadia: <Text style={styles.days}> {days.toFixed(0)} </Text> dias</Text>
                 <Slider
                     style={{ width: 200, height: 40}}
                     minimumValue={1}
                     maximumValue={7}
                     minimumTrackTintColor="#009688"
                     maximumTrackTintColor="#0000000"
+                    value={days}
+                    onValueChange={(value) => setDays(value)}
                 />
             </View>
-            <Pressable style={styles.button}>
+            <Pressable style={styles.button} onPress={handleGenerate}>
                 <Text style={styles.buttonText}>Gerar Roteiro</Text>
-                <MaterialIcons Name="travel-explore" size={24} color="#FFF"></MaterialIcons>
+                <MaterialIcons Name="travel-explore" size={24} color="#F1F1"></MaterialIcons>
             </Pressable>
             <ScrollView contentContainerStyle={{ paddingBottom: 24, marginTop: 4,}} style={styles.containerScroll} showsHorizontalScrollIndicator={false}>
+                {loading && (
                 <View style={styles.content}>
                     <Text style={styles.tittle}> Seu Roteiro:  </Text>
-                    <Text> Roteiro completo</Text>
+                    <ActivityIndicator color="#000" size="large" />
                 </View>
+                )}
+
+                {travel && (
+                <View style={styles.content}>
+                    <Text style={styles.tittle}> Seu Roteiro:  </Text>
+                    <Text>{travel}</Text>
+                </View>
+                )}
+                
             </ScrollView>
         </View>
     );
