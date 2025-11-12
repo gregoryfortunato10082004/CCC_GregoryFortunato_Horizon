@@ -1,10 +1,11 @@
-import { useState } from 'react'
 import { MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
-import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View, ActivityIndicator } from "react-native";
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Keyboard, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
 
 const StatusBarHeight = StatusBar.currentHeight
 
+const KEY_GPT = ''
 export default function App(){
     
     const [city, setCity] = useState("");
@@ -12,9 +13,63 @@ export default function App(){
     const [loading, setLoading] = useState(false);
     const [travel, setTravel] = useState("")
 
-    function handleGenerate() {
-        console.log(city)
-        console.log(days.toFixed(0));
+    async function handleGenerate() {
+        if(city === "") {
+            Alert.alert("Atenção" , "Preencha o nome da cidade")
+            return;
+        }
+
+        setLoading(true);
+        setTravel(""); 
+        Keyboard.dismiss();
+
+        const prompt = `Crie um roteiro para uma viagem de exatos ${days.toFixed(0)} dias na cidade de ${city}, busque por lugares turisticos, lugares mais visitados, seja preciso nos dias de estadia fornecidos e limite o roteiro apenas na cidade fornecida. Forneça apenas em tópicos com nome do local onde ir em cada dia.`
+
+        try {
+            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers:{
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${KEY_GPT}`
+                },
+                body: JSON.stringify({
+                    model:"gpt-3.5-turbo",
+                 
+                    messages: [
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ],
+                    temperature: 0.20,
+                    max_tokens: 500,
+                    top_p: 1,
+                })
+            });
+
+            const data = await response.json();
+            
+          
+            if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+                console.log(data.choices[0].message.content);
+                setTravel(data.choices[0].message.content);
+            } else if (data.error) {
+                
+                console.log("Erro da API:", data.error.message);
+                Alert.alert("Erro da API", data.error.message);
+            } else {
+                
+                console.log("Resposta inesperada:", data);
+                Alert.alert("Erro", "Não foi possível processar a resposta da API.");
+            }
+            
+        } catch (error) {
+           
+            console.log("Erro de requisição:", error);
+            Alert.alert("Erro de Conexão", "Não foi possível conectar-se à API.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     return(
@@ -22,7 +77,7 @@ export default function App(){
             <StatusBar barStyle="dark-content" translucent={true} backgroundColor="#F1F1F10"/>
             <Text style={styles.heading}>Horizon</Text>
             <View style={styles.form}>
-                <Text style={styles.label}>CidadeDestino</Text>
+                <Text style={styles.label}>Cidade Destino</Text>
                 <TextInput
                     placeholder="Ex: Passo Fundo, RS"
                     style={styles.input}
@@ -31,7 +86,7 @@ export default function App(){
                 />
                 <Text style={styles.label}>Tempo de estadia: <Text style={styles.days}> {days.toFixed(0)} </Text> dias</Text>
                 <Slider
-                    style={{ width: 200, height: 40}}
+                    style={{ width: '100%', height: 40}}
                     minimumValue={1}
                     maximumValue={7}
                     minimumTrackTintColor="#009688"
@@ -40,21 +95,22 @@ export default function App(){
                     onValueChange={(value) => setDays(value)}
                 />
             </View>
-            <Pressable style={styles.button} onPress={handleGenerate}>
+            <Pressable style={styles.button} onPress={handleGenerate} disabled={loading}>
+                
                 <Text style={styles.buttonText}>Gerar Roteiro</Text>
-                <MaterialIcons Name="travel-explore" size={24} color="#F1F1"></MaterialIcons>
+                <MaterialIcons name="travel-explore" size={24} color="#FFF"></MaterialIcons> 
             </Pressable>
             <ScrollView contentContainerStyle={{ paddingBottom: 24, marginTop: 4,}} style={styles.containerScroll} showsHorizontalScrollIndicator={false}>
                 {loading && (
                 <View style={styles.content}>
-                    <Text style={styles.tittle}> Seu Roteiro:  </Text>
+                    <Text style={styles.tittle}> Seu Roteiro: </Text>
                     <ActivityIndicator color="#000" size="large" />
                 </View>
                 )}
 
-                {travel && (
+                {travel.length > 0 && (
                 <View style={styles.content}>
-                    <Text style={styles.tittle}> Seu Roteiro:  </Text>
+                    <Text style={styles.tittle}> Seu Roteiro: </Text>
                     <Text>{travel}</Text>
                 </View>
                 )}
