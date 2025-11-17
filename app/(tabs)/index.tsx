@@ -2,10 +2,16 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
+import Constants from 'expo-constants'; // ⬅️ IMPORTAÇÃO FINAL
 
 const StatusBarHeight = StatusBar.currentHeight
 
-const KEY_GPT = ''
+// 1. ACESSO FINAL À CHAVE INJETADA PELO app.json
+// Usamos a asserção '!' para garantir que o TypeScript não reclame.
+const GEMINI_API_KEY = Constants.expoConfig!.extra!.GEMINI_API_KEY; 
+
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+
 export default function App(){
     
     const [city, setCity] = useState("");
@@ -19,6 +25,11 @@ export default function App(){
             return;
         }
 
+        if(!GEMINI_API_KEY){
+            Alert.alert("Erro de Configuração", "Chave de API ausente. Verifique o app.json.");
+            return;
+        }
+
         setLoading(true);
         setTravel(""); 
         Keyboard.dismiss();
@@ -26,45 +37,46 @@ export default function App(){
         const prompt = `Crie um roteiro para uma viagem de exatos ${days.toFixed(0)} dias na cidade de ${city}, busque por lugares turisticos, lugares mais visitados, seja preciso nos dias de estadia fornecidos e limite o roteiro apenas na cidade fornecida. Forneça apenas em tópicos com nome do local onde ir em cada dia.`
 
         try {
-            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            // Requisição com FETCH para a API REST do Gemini (usando a chave fixa)
+            const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
                 method: "POST",
                 headers:{
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${KEY_GPT}`
                 },
                 body: JSON.stringify({
-                    model:"gpt-3.5-turbo",
-                 
-                    messages: [
+                    // 1. Array de Conteúdo (Mensagens)
+                    contents: [
                         {
                             role: 'user',
-                            content: prompt
+                            parts: [{ text: prompt }]
                         }
                     ],
-                    temperature: 0.20,
-                    max_tokens: 500,
-                    top_p: 1,
+                    // 2. CORREÇÃO: Usando 'generationConfig' no lugar de 'config'
+                    generationConfig: {
+                         temperature: 0.20,
+                         maxOutputTokens: 500,
+                    }
                 })
             });
 
             const data = await response.json();
             
-          
-            if (data.choices && data.choices.length > 0 && data.choices[0].message) {
-                console.log(data.choices[0].message.content);
-                setTravel(data.choices[0].message.content);
+            // Tratamento da resposta do Gemini
+            if (data.candidates && data.candidates.length > 0) {
+                const generatedText = data.candidates[0].content.parts[0].text;
+                console.log(generatedText);
+                setTravel(generatedText);
             } else if (data.error) {
-                
-                console.log("Erro da API:", data.error.message);
+                // Captura erros da API, como chave inválida ou limite excedido
+                console.log("Erro da API Gemini:", data.error.message);
                 Alert.alert("Erro da API", data.error.message);
             } else {
-                
                 console.log("Resposta inesperada:", data);
                 Alert.alert("Erro", "Não foi possível processar a resposta da API.");
             }
             
         } catch (error) {
-           
+            
             console.log("Erro de requisição:", error);
             Alert.alert("Erro de Conexão", "Não foi possível conectar-se à API.");
         } finally {

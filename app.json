@@ -43,6 +43,18 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    
+    // 🔑 BLOCO PARA INJEÇÃO DA CHAVE DE API
+    // O valor é acessado no código via: Constants.expoConfig.extra.GEMINI_API_KEY
+    "extra": {
+      "GEMINI_API_KEY": "AIzaSyBdrI6ohp1sAaTwyIQXdTMDS9AUXvn5vuk", 
+      "FIREBASE_API_KEY": "AIzaSyCssBw8E8eUAY_k4dVEwmjtEbmx9yb6y8w",
+      "FIREBASE_AUTH_DOMAIN": "horizon-roteiros.firebaseapp.com",
+      "FIREBASE_PROJECT_ID": "horizon-roteiros",
+      "FIREBASE_STORAGE_BUCKET": "horizon-roteiros.firebasestorage.app", // Adicionado
+      "FIREBASE_MESSAGING_SENDER_ID": "264051226940", // Adicionado
+      "FIREBASE_APP_ID": "1:264051226940:web:3d4bc0f368102ee0a2c639" // Adicionado
     }
   }
 }
