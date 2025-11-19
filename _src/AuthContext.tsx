@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log("USUARIO ATUAL:", firebaseUser);
+      // console.log("USUARIO ATUAL:", firebaseUser);
       setUser(firebaseUser);
       setLoading(false);
     });
