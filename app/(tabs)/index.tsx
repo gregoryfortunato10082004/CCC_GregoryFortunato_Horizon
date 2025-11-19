@@ -122,14 +122,19 @@ export default function App() {
       </Pressable>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 24, marginTop: 4 }}
-        style={styles.containerScroll}
-      >
-        {loading && <ActivityIndicator size="large" color="#000" />}
-        {travel.length > 0 && (
-          <Text style={styles.travelText}>{travel}</Text>
-        )}
-      </ScrollView>
+  contentContainerStyle={{ paddingBottom: 24, marginTop: 4 }}
+  style={styles.containerScroll}
+  showsVerticalScrollIndicator={false}
+>
+  {loading && <ActivityIndicator size="large" color="#000" />}
+
+  {travel.length > 0 && (
+    <View style={styles.outputBox}>
+      <Text style={styles.travelText}>{travel}</Text>
+    </View>
+  )}
+</ScrollView>
+
     </View>
     
   );
@@ -177,5 +182,18 @@ const styles = StyleSheet.create({
   },
   buttonText: { fontSize: 18, color: "#FFF", fontWeight: "bold" },
   containerScroll: { width: "90%", marginTop: 8 },
-  travelText: { fontSize: 16, lineHeight: 22 }
+  travelText: { fontSize: 16, lineHeight: 22 },
+  
+  outputBox: {
+  backgroundColor: "#fff",
+  padding: 16,
+  borderRadius: 8,
+  marginTop: 12,
+  width: "100%",
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3
+}
 });
