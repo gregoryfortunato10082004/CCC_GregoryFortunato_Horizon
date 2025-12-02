@@ -1,11 +1,13 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import * as Clipboard from "expo-clipboard";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -13,27 +15,35 @@ import {
 import Markdown from "react-native-markdown-display";
 import { deleteTrip, getTripById, SavedTrip } from "../_src/_services/storageServices";
 
-type RootStackParamList = {
-  TripDetail: { tripId: string };
-};
-
-type TripDetailRouteProp = RouteProp<RootStackParamList, "TripDetail">;
-
 export default function TripDetail() {
-  const route = useRoute<TripDetailRouteProp>();
-  const navigation = useNavigation();
-  const { tripId } = route.params;
+  const router = useRouter(); 
+  
+  const params = useLocalSearchParams();
+  const tripId = Array.isArray(params.tripId) ? params.tripId[0] : params.tripId;
 
   const [trip, setTrip] = useState<SavedTrip | null>(null);
+  const [loading, setLoading] = useState(true); 
 
   useEffect(() => {
     async function fetchTrip() {
-      const t = await getTripById(tripId);
-      if (!t) {
-        Alert.alert("Erro", "Roteiro não encontrado");
-        navigation.goBack();
-      } else {
-        setTrip(t);
+      if (!tripId) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        const t = await getTripById(tripId);
+        if (!t) {
+          Alert.alert("Erro", "Roteiro não encontrado");
+          router.navigate('/(tabs)/SavedTrips'); // ✅ Correção aqui
+        } else {
+          setTrip(t);
+        }
+      } catch (error) {
+         Alert.alert("Erro", "Falha ao buscar detalhes do roteiro.");
+         router.navigate('/(tabs)/SavedTrips'); // ✅ Correção aqui
+      } finally {
+        setLoading(false);
       }
     }
     fetchTrip();
@@ -42,18 +52,21 @@ export default function TripDetail() {
   async function handleDelete() {
     Alert.alert(
       "Deletar Roteiro",
-      "Deseja realmente deletar este roteiro?",
+      "Deseja realmente deletar este roteiro permanentemente?",
       [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Deletar",
           style: "destructive",
           onPress: async () => {
-            if (!trip) return;
+            if (!tripId) return;
             try {
-              await deleteTrip(trip.id);
+              await deleteTrip(tripId);
               Alert.alert("Deletado", "Roteiro removido com sucesso.");
-              navigation.goBack();
+              
+              // ✅ Correção: Força a volta para a aba de favoritos
+              router.navigate('/(tabs)/SavedTrips'); 
+              
             } catch (error) {
               Alert.alert("Erro", "Não foi possível deletar o roteiro.");
             }
@@ -66,57 +79,133 @@ export default function TripDetail() {
   async function handleCopy() {
     if (!trip) return;
     await Clipboard.setStringAsync(trip.itinerary);
-    Alert.alert("✅ Copiado!", "O roteiro foi copiado.");
+    Alert.alert("✅ Copiado!", "O roteiro foi copiado para a área de transferência.");
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF5656" />
+        <Text style={{marginTop: 10}}>Carregando detalhes...</Text>
+      </View>
+    );
   }
 
   if (!trip) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Carregando roteiro...</Text>
+        <Text>Roteiro não encontrado.</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
-      <Text style={styles.city}>{trip.city}</Text>
-      <Text style={styles.days}>{trip.days.toFixed(0)} dias</Text>
-
-      <View style={styles.actionsBar}>
-        <Pressable onPress={handleCopy} style={styles.actionButton}>
-          <MaterialIcons name="content-copy" size={24} color="#666" />
-          <Text style={styles.actionText}>Copiar</Text>
-        </Pressable>
-
-        <Pressable onPress={handleDelete} style={styles.actionButton}>
-          <MaterialIcons name="delete" size={24} color="#FF5656" />
-          <Text style={[styles.actionText, { color: "#FF5656" }]}>Deletar</Text>
+    <View style={styles.mainContainer}>
+      {/* ✅ Barra superior com botão de voltar corrigido */}
+      <View style={styles.headerBar}>
+        <Pressable 
+          onPress={() => router.navigate('/(tabs)/SavedTrips')} // ✅ Força ir para Favoritos
+          style={styles.backButton}
+        >
+          <MaterialIcons name="arrow-back" size={24} color="#333" />
+          <Text style={styles.backButtonText}>Voltar</Text>
         </Pressable>
       </View>
 
-      <Markdown style={markdownStyles}>{trip.itinerary}</Markdown>
-    </ScrollView>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.cityTitle}>{trip.city}</Text>
+        <View style={styles.daysTag}>
+            <MaterialIcons name="calendar-today" size={14} color="#666" />
+            <Text style={styles.daysText}>{trip.days.toFixed(0)} dias de viagem</Text>
+        </View>
+
+        <View style={styles.actionsBar}>
+          <Pressable onPress={handleCopy} style={styles.actionButton}>
+            <MaterialIcons name="content-copy" size={20} color="#666" />
+            <Text style={styles.actionText}>Copiar Texto</Text>
+          </Pressable>
+
+          <Pressable onPress={handleDelete} style={[styles.actionButton, styles.deleteActionButton]}>
+            <MaterialIcons name="delete-outline" size={20} color="#FF5656" />
+            <Text style={[styles.actionText, { color: "#FF5656" }]}>Deletar</Text>
+          </Pressable>
+        </View>
+        
+        <View style={styles.markdownWrapper}>
+            <Markdown style={markdownStyles}>{trip.itinerary}</Markdown>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f1f1f1" },
+  mainContainer: { flex: 1, backgroundColor: "#f8f9fa" },
+  headerBar: {
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 50,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    zIndex: 10,
+  },
+  backButton: { flexDirection: "row", alignItems: "center" },
+  backButtonText: { fontSize: 16, marginLeft: 4, color: "#333" },
+  
+  container: { flex: 1 },
+  contentContainer: { padding: 20, paddingBottom: 40 },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  city: { fontSize: 24, fontWeight: "bold", marginBottom: 4 },
-  days: { fontSize: 16, color: "#666", marginBottom: 16 },
-  actionsBar: { flexDirection: "row", gap: 12, marginBottom: 16 },
+  
+  cityTitle: { fontSize: 32, fontWeight: "800", color: "#2c3e50", marginBottom: 4 },
+  daysTag: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 6 },
+  daysText: { fontSize: 14, color: "#666", fontWeight: "500" },
+
+  actionsBar: { flexDirection: "row", gap: 12, marginBottom: 24 },
   actionButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    padding: 8,
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
     backgroundColor: "#fff",
-    borderRadius: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  actionText: { fontSize: 14, color: "#666", fontWeight: "500" },
+  deleteActionButton: {
+    borderColor: "#ffcfcf",
+    backgroundColor: "#fff5f5"
+  },
+  actionText: { fontSize: 16, color: "#555", fontWeight: "600" },
+  
+  markdownWrapper: {
+      backgroundColor: '#fff',
+      padding: 20,
+      borderRadius: 16,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+      elevation: 3,
+  }
 });
 
 const markdownStyles = StyleSheet.create({
-  body: { fontSize: 16, lineHeight: 24, color: "#333" },
-  strong: { fontWeight: "bold" },
+  body: { fontSize: 16, lineHeight: 26, color: "#444" },
+  heading1: { fontSize: 26, fontWeight: "bold", color: "#FF5656", marginTop: 24, marginBottom: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  heading2: { fontSize: 22, fontWeight: "bold", color: "#333", marginTop: 20, marginBottom: 10 },
+  heading3: { fontSize: 18, fontWeight: "bold", color: "#555", marginTop: 16, marginBottom: 8 },
+  paragraph: { marginBottom: 16 },
+  list_item: { marginBottom: 8 },
+  bullet_list: { marginBottom: 16 },
+  ordered_list: { marginBottom: 16 },
+  strong: { fontWeight: "bold", color: "#222" },
+  emphasis: { fontStyle: "italic", color: "#666" },
 });

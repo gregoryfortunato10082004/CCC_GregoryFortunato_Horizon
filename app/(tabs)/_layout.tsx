@@ -1,3 +1,4 @@
+import { MaterialIcons } from '@expo/vector-icons'; // Importando ícones
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Alert, Text, TouchableOpacity } from 'react-native';
@@ -25,20 +26,28 @@ export default function TabLayout() {
           </TouchableOpacity>
         ),
         headerShown: true,
+        tabBarActiveTintColor: '#FF5656', // Cor destaque
+        tabBarInactiveTintColor: '#999',  // Cor inativa
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: 'Novo Roteiro',
+          tabBarIcon: ({ color }) => <MaterialIcons name="add-circle-outline" size={28} color={color} />,
         }}
       />
+      
+      {/* Esta é a nova aba que conecta com o arquivo 'saved.tsx' que você moveu */}
       <Tabs.Screen
-        name="explore"
+        name="SavedTrips"
         options={{
-          title: 'Explore',
+          title: 'Favoritos',
+          tabBarIcon: ({ color }) => <MaterialIcons name="favorite" size={28} color={color} />,
         }}
       />
+
+    
     </Tabs>
   );
 }

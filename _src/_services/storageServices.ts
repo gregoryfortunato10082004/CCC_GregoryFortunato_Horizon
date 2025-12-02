@@ -6,9 +6,8 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
   query,
-  where,
+  where
 } from "firebase/firestore";
 import { db } from "../../_src/firebaseConfig";
 
@@ -50,7 +49,7 @@ export async function getSavedTrips(): Promise<SavedTrip[]> {
   const q = query(
     collection(db, "trips"),
     where("userId", "==", user.uid),
-    orderBy("createdAt", "desc")
+    // orderBy("createdAt", "desc")
   );
 
   const snapshot = await getDocs(q);

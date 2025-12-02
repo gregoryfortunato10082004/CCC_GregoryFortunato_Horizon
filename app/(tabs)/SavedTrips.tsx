@@ -1,5 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router"; // ✅ Adicionado useFocusEffect
+import { useCallback, useState } from "react"; // ✅ Adicionado useCallback e removido useEffect
 import {
   ActivityIndicator,
   Alert,
@@ -9,14 +10,17 @@ import {
   Text,
   View,
 } from "react-native";
-import { deleteTrip, getSavedTrips, SavedTrip } from "../_src/_services/storageServices";
+import { deleteTrip, getSavedTrips, SavedTrip } from "../../_src/_services/storageServices";
 
 export default function SavedTrips() {
-  const [trips, setTrips] = useState<SavedTrip[]>([]); // ✅ tipo definido
+  const router = useRouter();
+  const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [loading, setLoading] = useState(false);
 
   async function fetchTrips() {
-    setLoading(true);
+    // Dica: Se quiser que a troca de aba seja instantânea (sem piscar carregando), 
+    // comente a linha 'setLoading(true)' abaixo.
+    setLoading(true); 
     try {
       const savedTrips = await getSavedTrips();
       setTrips(savedTrips);
@@ -27,9 +31,12 @@ export default function SavedTrips() {
     }
   }
 
-  useEffect(() => {
-    fetchTrips();
-  }, []);
+  // ✅ MUDANÇA AQUI: useFocusEffect garante que a lista atualize ao entrar na aba
+  useFocusEffect(
+    useCallback(() => {
+      fetchTrips();
+    }, [])
+  );
 
   async function handleDelete(id: string) {
     Alert.alert(
@@ -43,7 +50,8 @@ export default function SavedTrips() {
           onPress: async () => {
             try {
               await deleteTrip(id);
-              setTrips(trips.filter((trip) => trip.id !== id)); // ✅ tipagem correta
+              // Atualiza a lista localmente para não precisar buscar tudo de novo
+              setTrips((prevTrips) => prevTrips.filter((trip) => trip.id !== id));
               Alert.alert("Deletado", "Roteiro removido com sucesso.");
             } catch (error) {
               Alert.alert("Erro", "Não foi possível deletar o roteiro.");
@@ -56,7 +64,10 @@ export default function SavedTrips() {
 
   function renderItem({ item }: { item: SavedTrip }) {
     return (
-      <View style={styles.tripCard}>
+      <Pressable 
+        style={styles.tripCard}
+        onPress={() => router.push({ pathname: "/TripDetail", params: { tripId: item.id } })}
+      >
         <View style={{ flex: 1 }}>
           <Text style={styles.city}>{item.city}</Text>
           <Text style={styles.days}>{item.days.toFixed(0)} dias</Text>
@@ -68,20 +79,20 @@ export default function SavedTrips() {
         <Pressable onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
           <MaterialIcons name="delete" size={24} color="#FF5656" />
         </Pressable>
-      </View>
+      </Pressable>
     );
   }
 
-  if (loading) {
+  if (loading && trips.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#FF5656" />
         <Text>Carregando roteiros...</Text>
       </View>
     );
   }
 
-  if (!trips.length) {
+  if (!loading && !trips.length) {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>Nenhum roteiro salvo ainda 😔</Text>
@@ -95,6 +106,8 @@ export default function SavedTrips() {
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
       contentContainerStyle={{ padding: 16 }}
+      refreshing={loading}
+      onRefresh={fetchTrips} 
     />
   );
 }
