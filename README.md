@@ -13,18 +13,13 @@ Seu objetivo principal é **simplificar a organização de roteiros de viagem** 
 - 🗂 **Gerenciamento de Viagens**  
   Salve, visualize e gerencie seus roteiros diretamente no aplicativo.
 
-- 📷 **Upload de Fotos**  
-  Faça upload de imagens relacionadas às suas viagens.
-
-- ⭐ **Sistema de Feedback**  
-  Avalie e dê feedback sobre os roteiros gerados pela IA.
 
 ---
 
 ## 🛠 Tecnologias Utilizadas
-- **Frontend:** React Native  
-- **Backend:** Node.js  
-- **IA:** OpenAI API  
+- **Frontend:** React Native   
+- **IA:** OpenAI API
+- **Firebase** - Authentication e Database
 
 ---
 
