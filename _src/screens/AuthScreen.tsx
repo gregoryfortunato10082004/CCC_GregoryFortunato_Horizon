@@ -1,18 +1,23 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { 
+    createUserWithEmailAndPassword, 
+    sendPasswordResetEmail, 
+    signInWithEmailAndPassword, 
+    updateProfile 
+} from 'firebase/auth';
 import React, { useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    Platform, // ✅ Importante: Adicionei Platform
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+import { 
+    ActivityIndicator, 
+    Alert, 
+    Platform, 
+    StyleSheet, 
+    Text, 
+    TextInput, 
+    TouchableOpacity, 
+    View 
 } from 'react-native';
-import { createUserProfile } from '../_services/storageServices';
-import { auth } from '../firebaseConfig';
+import { auth } from '../firebaseConfig'; 
+import { createUserProfile } from '../_services/storageServices'; 
 
 interface AuthScreenProps {
     onAuthSuccess: () => void;
@@ -25,12 +30,30 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // ✅ Função auxiliar para mostrar Alertas na Web e no Celular
     const showAlert = (title: string, message: string) => {
         if (Platform.OS === 'web') {
             window.alert(`${title}\n\n${message}`);
         } else {
             Alert.alert(title, message);
+        }
+    };
+
+    // ✅ NOVA FUNÇÃO: Esqueci minha senha
+    const handleForgotPassword = async () => {
+        if (!email.trim()) {
+            showAlert("Atenção", "Digite seu e-mail no campo acima para redefinir a senha.");
+            return;
+        }
+
+        try {
+            await sendPasswordResetEmail(auth, email);
+            showAlert("E-mail Enviado", `Enviamos um link para ${email}. Verifique sua caixa de entrada (e spam) para criar uma nova senha.`);
+        } catch (error: any) {
+            console.error(error);
+            let msg = "Não foi possível enviar o e-mail.";
+            if (error.code === 'auth/user-not-found') msg = "Este e-mail não está cadastrado.";
+            if (error.code === 'auth/invalid-email') msg = "O formato do e-mail é inválido.";
+            showAlert("Erro", msg);
         }
     };
 
@@ -54,18 +77,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                     return;
                 }
 
-                // 1. Cria a conta no Auth
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // 2. Atualiza o nome no Auth
                 await updateProfile(user, { displayName: name });
-
-                // 3. Cria o perfil no Firestore
                 await createUserProfile(user, name);
             }
             
-            // Sucesso!
             onAuthSuccess();
         } catch (error: any) {
             let message = "Ocorreu um erro desconhecido.";
@@ -87,7 +105,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             <MaterialIcons name="person" size={100} color="#FF5656" style={styles.icon} />
             <Text style={styles.title}>{isLogin ? 'Bem-vindo de volta!' : 'Crie sua conta'}</Text>
 
-            {/* Campo de Nome (Apenas no Registro) */}
             {!isLogin && (
                 <View style={styles.inputContainer}>
                     <MaterialIcons name="face" size={20} color="#666" style={styles.inputIcon} />
@@ -123,6 +140,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                     secureTextEntry
                 />
             </View>
+
+            {/* ✅ BOTÃO ESQUECI MINHA SENHA (Só aparece no Login) */}
+            {isLogin && (
+                <TouchableOpacity onPress={handleForgotPassword} style={{ alignSelf: 'flex-end', marginRight: '5%', marginBottom: 10 }}>
+                    <Text style={{ color: '#FF5656', fontWeight: '600' }}>Esqueci minha senha</Text>
+                </TouchableOpacity>
+            )}
 
             <TouchableOpacity style={styles.button} onPress={handleAuthentication} disabled={loading}>
                 {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>{isLogin ? 'Entrar' : 'Registrar'}</Text>}
