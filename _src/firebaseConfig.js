@@ -1,7 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { initializeApp } from "firebase/app";
-import { getReactNativePersistence, initializeAuth } from "firebase/auth";
+import { Platform } from "react-native"; // Importe o Platform para checar onde está rodando
+// Importe também o browserLocalPersistence
+import {
+  browserLocalPersistence,
+  getReactNativePersistence,
+  initializeAuth
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const expoConfig = Constants.expoConfig ?? Constants.manifest ?? {};
@@ -18,8 +24,19 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+// Lógica de escolha da persistência
+let authPersistence;
+
+if (Platform.OS === "web") {
+  // Se for Web, usa a persistência padrão do navegador
+  authPersistence = browserLocalPersistence;
+} else {
+  // Se for Celular, usa o AsyncStorage
+  authPersistence = getReactNativePersistence(AsyncStorage);
+}
+
 export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
+  persistence: authPersistence,
 });
 
 export const db = getFirestore(app);

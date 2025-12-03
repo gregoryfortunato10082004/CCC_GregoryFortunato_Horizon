@@ -1,10 +1,11 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router"; // ✅ Adicionado useFocusEffect
-import { useCallback, useState } from "react"; // ✅ Adicionado useCallback e removido useEffect
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -18,27 +19,48 @@ export default function SavedTrips() {
   const [loading, setLoading] = useState(false);
 
   async function fetchTrips() {
-    // Dica: Se quiser que a troca de aba seja instantânea (sem piscar carregando), 
-    // comente a linha 'setLoading(true)' abaixo.
     setLoading(true); 
     try {
       const savedTrips = await getSavedTrips();
       setTrips(savedTrips);
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível carregar os roteiros.");
+      const msg = "Não foi possível carregar os roteiros.";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Erro", msg);
     } finally {
       setLoading(false);
     }
   }
 
-  // ✅ MUDANÇA AQUI: useFocusEffect garante que a lista atualize ao entrar na aba
   useFocusEffect(
     useCallback(() => {
       fetchTrips();
     }, [])
   );
 
+  async function executeDelete(id: string) {
+    try {
+      await deleteTrip(id);
+      setTrips((prevTrips) => prevTrips.filter((trip) => trip.id !== id));
+      const msg = "Roteiro removido com sucesso.";
+      if (Platform.OS === 'web') {
+        window.alert(msg);
+      } else {
+        Alert.alert("Deletado", msg);
+      }
+    } catch (error) {
+      const msg = "Não foi possível deletar o roteiro.";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Erro", msg);
+    }
+  }
+
   async function handleDelete(id: string) {
+    if (Platform.OS === 'web') {
+      const confirm = window.confirm("Deseja realmente deletar este roteiro?");
+      if (confirm) {
+        await executeDelete(id);
+      }
+      return;
+    }
     Alert.alert(
       "Deletar Roteiro",
       "Deseja realmente deletar este roteiro?",
@@ -47,16 +69,7 @@ export default function SavedTrips() {
         {
           text: "Deletar",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteTrip(id);
-              // Atualiza a lista localmente para não precisar buscar tudo de novo
-              setTrips((prevTrips) => prevTrips.filter((trip) => trip.id !== id));
-              Alert.alert("Deletado", "Roteiro removido com sucesso.");
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível deletar o roteiro.");
-            }
-          },
+          onPress: () => executeDelete(id),
         },
       ]
     );
@@ -75,7 +88,6 @@ export default function SavedTrips() {
             {item.itinerary}
           </Text>
         </View>
-
         <Pressable onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
           <MaterialIcons name="delete" size={24} color="#FF5656" />
         </Pressable>

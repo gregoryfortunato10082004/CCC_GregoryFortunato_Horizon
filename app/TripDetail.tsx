@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StatusBar,
@@ -17,10 +18,8 @@ import { deleteTrip, getTripById, SavedTrip } from "../_src/_services/storageSer
 
 export default function TripDetail() {
   const router = useRouter(); 
-  
   const params = useLocalSearchParams();
   const tripId = Array.isArray(params.tripId) ? params.tripId[0] : params.tripId;
-
   const [trip, setTrip] = useState<SavedTrip | null>(null);
   const [loading, setLoading] = useState(true); 
 
@@ -30,18 +29,19 @@ export default function TripDetail() {
         setLoading(false);
         return;
       }
-      
       try {
         const t = await getTripById(tripId);
         if (!t) {
-          Alert.alert("Erro", "Roteiro não encontrado");
-          router.navigate('/(tabs)/SavedTrips'); // ✅ Correção aqui
+          const msg = "Roteiro não encontrado";
+          Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Erro", msg);
+          router.navigate('/(tabs)/SavedTrips'); 
         } else {
           setTrip(t);
         }
       } catch (error) {
-         Alert.alert("Erro", "Falha ao buscar detalhes do roteiro.");
-         router.navigate('/(tabs)/SavedTrips'); // ✅ Correção aqui
+         const msg = "Falha ao buscar detalhes do roteiro.";
+         Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Erro", msg);
+         router.navigate('/(tabs)/SavedTrips'); 
       } finally {
         setLoading(false);
       }
@@ -49,7 +49,31 @@ export default function TripDetail() {
     fetchTrip();
   }, [tripId]);
 
+  async function executeDelete() {
+    if (!tripId) return;
+    try {
+      await deleteTrip(tripId);
+      const msg = "Roteiro removido com sucesso.";
+      if (Platform.OS === 'web') {
+        window.alert(msg);
+      } else {
+        Alert.alert("Deletado", msg);
+      }
+      router.navigate('/(tabs)/SavedTrips'); 
+    } catch (error) {
+      const msg = "Não foi possível deletar o roteiro.";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Erro", msg);
+    }
+  }
+
   async function handleDelete() {
+    if (Platform.OS === 'web') {
+      const confirm = window.confirm("Deseja realmente deletar este roteiro permanentemente?");
+      if (confirm) {
+        await executeDelete();
+      }
+      return;
+    }
     Alert.alert(
       "Deletar Roteiro",
       "Deseja realmente deletar este roteiro permanentemente?",
@@ -58,19 +82,7 @@ export default function TripDetail() {
         {
           text: "Deletar",
           style: "destructive",
-          onPress: async () => {
-            if (!tripId) return;
-            try {
-              await deleteTrip(tripId);
-              Alert.alert("Deletado", "Roteiro removido com sucesso.");
-              
-              // ✅ Correção: Força a volta para a aba de favoritos
-              router.navigate('/(tabs)/SavedTrips'); 
-              
-            } catch (error) {
-              Alert.alert("Erro", "Não foi possível deletar o roteiro.");
-            }
-          },
+          onPress: executeDelete,
         },
       ]
     );
@@ -79,7 +91,8 @@ export default function TripDetail() {
   async function handleCopy() {
     if (!trip) return;
     await Clipboard.setStringAsync(trip.itinerary);
-    Alert.alert("✅ Copiado!", "O roteiro foi copiado para a área de transferência.");
+    const msg = "O roteiro foi copiado para a área de transferência.";
+    Platform.OS === 'web' ? window.alert(`✅ Copiado!\n${msg}`) : Alert.alert("✅ Copiado!", msg);
   }
 
   if (loading) {
@@ -101,12 +114,8 @@ export default function TripDetail() {
 
   return (
     <View style={styles.mainContainer}>
-      {/* ✅ Barra superior com botão de voltar corrigido */}
       <View style={styles.headerBar}>
-        <Pressable 
-          onPress={() => router.navigate('/(tabs)/SavedTrips')} // ✅ Força ir para Favoritos
-          style={styles.backButton}
-        >
+        <Pressable onPress={() => router.navigate('/(tabs)/SavedTrips')} style={styles.backButton}>
           <MaterialIcons name="arrow-back" size={24} color="#333" />
           <Text style={styles.backButtonText}>Voltar</Text>
         </Pressable>
@@ -124,13 +133,11 @@ export default function TripDetail() {
             <MaterialIcons name="content-copy" size={20} color="#666" />
             <Text style={styles.actionText}>Copiar Texto</Text>
           </Pressable>
-
           <Pressable onPress={handleDelete} style={[styles.actionButton, styles.deleteActionButton]}>
             <MaterialIcons name="delete-outline" size={20} color="#FF5656" />
             <Text style={[styles.actionText, { color: "#FF5656" }]}>Deletar</Text>
           </Pressable>
         </View>
-        
         <View style={styles.markdownWrapper}>
             <Markdown style={markdownStyles}>{trip.itinerary}</Markdown>
         </View>
@@ -152,15 +159,12 @@ const styles = StyleSheet.create({
   },
   backButton: { flexDirection: "row", alignItems: "center" },
   backButtonText: { fontSize: 16, marginLeft: 4, color: "#333" },
-  
   container: { flex: 1 },
   contentContainer: { padding: 20, paddingBottom: 40 },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  
   cityTitle: { fontSize: 32, fontWeight: "800", color: "#2c3e50", marginBottom: 4 },
   daysTag: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 6 },
   daysText: { fontSize: 14, color: "#666", fontWeight: "500" },
-
   actionsBar: { flexDirection: "row", gap: 12, marginBottom: 24 },
   actionButton: {
     flex: 1,
@@ -179,12 +183,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  deleteActionButton: {
-    borderColor: "#ffcfcf",
-    backgroundColor: "#fff5f5"
-  },
+  deleteActionButton: { borderColor: "#ffcfcf", backgroundColor: "#fff5f5" },
   actionText: { fontSize: 16, color: "#555", fontWeight: "600" },
-  
   markdownWrapper: {
       backgroundColor: '#fff',
       padding: 20,

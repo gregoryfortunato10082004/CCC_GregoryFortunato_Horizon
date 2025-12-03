@@ -1,4 +1,4 @@
-import { getAuth } from "firebase/auth";
+import { getAuth, User } from "firebase/auth";
 import {
   addDoc,
   collection,
@@ -7,6 +7,7 @@ import {
   getDoc,
   getDocs,
   query,
+  setDoc,
   where
 } from "firebase/firestore";
 import { db } from "../../_src/firebaseConfig";
@@ -20,7 +21,6 @@ export interface SavedTrip {
   userId?: string;
 }
 
-// Salvar roteiro
 export async function saveTrip(city: string, days: number, itinerary: string) {
   const auth = getAuth();
   const user = auth.currentUser;
@@ -40,7 +40,6 @@ export async function saveTrip(city: string, days: number, itinerary: string) {
   }
 }
 
-// Buscar todos os roteiros do usuário
 export async function getSavedTrips(): Promise<SavedTrip[]> {
   const auth = getAuth();
   const user = auth.currentUser;
@@ -49,7 +48,6 @@ export async function getSavedTrips(): Promise<SavedTrip[]> {
   const q = query(
     collection(db, "trips"),
     where("userId", "==", user.uid),
-    // orderBy("createdAt", "desc")
   );
 
   const snapshot = await getDocs(q);
@@ -63,7 +61,6 @@ export async function getSavedTrips(): Promise<SavedTrip[]> {
   }));
 }
 
-// Buscar roteiro específico pelo id
 export async function getTripById(id: string): Promise<SavedTrip | null> {
   try {
     const docRef = doc(db, "trips", id);
@@ -79,7 +76,37 @@ export async function getTripById(id: string): Promise<SavedTrip | null> {
   }
 }
 
-// Deletar roteiro
 export async function deleteTrip(id: string) {
   await deleteDoc(doc(db, "trips", id));
+}
+
+export async function createUserProfile(user: User, name: string) {
+  try {
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      email: user.email,
+      displayName: name,
+      role: "traveler",
+      createdAt: new Date().toISOString(),
+      plan: "free"
+    }, { merge: true });
+  } catch (error) {
+    console.error("Erro ao criar perfil de usuário:", error);
+  }
+}
+
+export async function getUserProfile(uid: string) {
+  try {
+    const docRef = doc(db, "users", uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Erro ao buscar perfil:", error);
+    return null;
+  }
 }

@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import Markdown from "react-native-markdown-display";
 import { useAuth } from "../../_src/AuthContext";
-import { saveTrip } from "../../_src/_services/storageServices"; // ✅ import corrigido
+import { saveTrip } from "../../_src/_services/storageServices";
 
 const StatusBarHeight = StatusBar.currentHeight;
 const GEMINI_API_KEY = Constants.expoConfig?.extra?.GEMINI_API_KEY;
@@ -34,7 +34,7 @@ const LOADING_MESSAGES = [
 ];
 
 export default function App() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [city, setCity] = useState("");
   const [days, setDays] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -43,7 +43,6 @@ export default function App() {
 
   useEffect(() => {
     if (!loading) return;
-
     const interval = setInterval(() => {
       setLoadingMessage((prev) => {
         const currentIndex = LOADING_MESSAGES.indexOf(prev);
@@ -51,23 +50,28 @@ export default function App() {
         return LOADING_MESSAGES[nextIndex];
       });
     }, 2000);
-
     return () => clearInterval(interval);
   }, [loading]);
 
   async function handleGenerate() {
-    if (!city) return Alert.alert("Atenção", "Preencha o nome da cidade");
-    if (!GEMINI_API_KEY)
-      return Alert.alert("Erro de Configuração", "Chave de API ausente.");
+    if (!city) {
+      const msg = "Preencha o nome da cidade";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Atenção", msg);
+      return;
+    } 
+    
+    if (!GEMINI_API_KEY) {
+      const msg = "Chave de API ausente.";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Erro de Configuração", msg);
+      return;
+    }
 
     setLoading(true);
     setTravel("");
     setLoadingMessage(LOADING_MESSAGES[0]);
     Keyboard.dismiss();
 
-    const prompt = `Crie um roteiro para uma viagem de ${days.toFixed(
-      0
-    )} dias em ${city}. Seja detalhado e criativo.`;
+    const prompt = `Crie um roteiro para uma viagem de ${days.toFixed(0)} dias em ${city}. Seja detalhado e criativo.`;
 
     try {
       const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -80,13 +84,12 @@ export default function App() {
       });
 
       const data = await response.json();
-      const text =
-        data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-        "Não foi possível gerar o roteiro.";
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "Não foi possível gerar o roteiro.";
 
       setTravel(text.replace(/##+/g, ""));
     } catch (error) {
-      Alert.alert("Erro", "Falha ao gerar o roteiro.");
+      const msg = "Falha ao gerar o roteiro.";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Erro", msg);
     } finally {
       setLoading(false);
     }
@@ -94,33 +97,40 @@ export default function App() {
 
   async function handleCopy() {
     if (!travel.trim()) {
-      Alert.alert("⚠️ Atenção", "Não há roteiro para copiar ainda.");
+      const msg = "Não há roteiro para copiar ainda.";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("⚠️ Atenção", msg);
       return;
     }
     await Clipboard.setStringAsync(travel);
-    Alert.alert("✅ Copiado!", "O roteiro foi copiado.");
+    const msg = "O roteiro foi copiado.";
+    Platform.OS === 'web' ? window.alert(msg) : Alert.alert("✅ Copiado!", msg);
   }
 
   async function handleSave() {
     if (!travel.trim()) {
-      Alert.alert("⚠️ Atenção", "Não há roteiro para salvar ainda.");
+      const msg = "Não há roteiro para salvar ainda.";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("⚠️ Atenção", msg);
       return;
     }
 
     if (!user) {
-      Alert.alert("⚠️ Atenção", "Você precisa estar logado para salvar.");
+      const msg = "Você precisa estar logado para salvar.";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("⚠️ Atenção", msg);
       return;
     }
 
     try {
-      console.log("Salvando roteiro para o usuário:", user.uid);
-      console.log("Dados:", { city, days, travel });
-
       await saveTrip(city, days, travel);
-      Alert.alert("💾 Salvo!", "Roteiro salvo nos favoritos!");
+      const msg = "Roteiro salvo nos favoritos!";
+      if (Platform.OS === 'web') {
+        window.alert(`💾 Salvo!\n${msg}`);
+      } else {
+        Alert.alert("💾 Salvo!", msg);
+      }
     } catch (error) {
       console.error("Erro ao salvar roteiro:", error);
-      Alert.alert("Erro", "Não foi possível salvar o roteiro na Firebase.");
+      const msg = "Não foi possível salvar o roteiro na Firebase.";
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Erro", msg);
     }
   }
 
@@ -137,11 +147,9 @@ export default function App() {
           value={city}
           onChangeText={setCity}
         />
-
         <Text style={styles.label}>
           Tempo de estadia: <Text style={styles.days}>{days.toFixed(0)}</Text> dias
         </Text>
-
         <Slider
           minimumValue={1}
           maximumValue={7}
@@ -179,7 +187,6 @@ export default function App() {
                 <MaterialIcons name="bookmark" size={20} color="#FF5656" />
                 <Text style={styles.actionText}>Salvar</Text>
               </Pressable>
-
               <Pressable onPress={handleCopy} style={styles.actionButton}>
                 <MaterialIcons name="content-copy" size={20} color="#666" />
                 <Text style={styles.actionText}>Copiar</Text>
